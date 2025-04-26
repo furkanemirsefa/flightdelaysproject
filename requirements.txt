@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # requirements.txt for Flight Delay Dashboard
 
 streamlit
@@ -7,3 +8,14 @@ shap
 joblib
 plotly
 numpy
+=======
+# requirements.txt for Flight Delay Dashboard
+
+streamlit
+pandas
+scikit-learn
+shap
+joblib
+plotly
+numpy
+>>>>>>> 3ef35e77b229ae5a371f34ec0610e48899fe421b
