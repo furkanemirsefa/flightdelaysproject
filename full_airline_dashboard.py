@@ -3,6 +3,8 @@ import shap
 import joblib
 import streamlit as st
 import plotly.express as px
+from streamlit_shap import st_shap
+
 
 @st.cache_resource
 def load_model():
@@ -93,6 +95,6 @@ elif section == "Explain Prediction":
     st.subheader('Random Sample Prediction Explanation')
     st.write('Sample Flight Details:', input_sample)
 
-    st.pyplot(shap.force_plot(explainer.expected_value[1], shap_values[1], input_X, matplotlib=True))
+    st_shap(shap.force_plot(explainer.expected_value[1], shap_values[1], input_X), height=300)
 
     st.info('Reload page to see another random flight explanation!')
