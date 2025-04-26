@@ -78,7 +78,7 @@ elif section == "Predict Flight Delay":
 elif section == "Explain Prediction":
     st.header('🔍 Explain the Flight Delay Prediction')
 
-    shap.initjs()
+    #shap.initjs()
 
     input_sample = flights_cleaned.sample(1, random_state=42)
     input_X = input_sample[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
