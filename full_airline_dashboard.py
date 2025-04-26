@@ -96,12 +96,9 @@ elif section == "Explain Prediction":
     st.subheader('Random Sample Prediction Explanation')
     st.write('Sample Flight Details:', input_sample)
 
-    sample_idx = 0  # Pick first (or random) row
+    sample_idx = 0
 
-    st_shap(shap.force_plot(
-    explainer.expected_value,
-    shap_values[sample_idx],
-    input_X.iloc[sample_idx]
-                ), height=300)
+    st_shap(shap.plots.force(explainer.expected_value,shap_values[sample_idx]),height=300)
+
 
     st.info('Reload page to see another random flight explanation!')
