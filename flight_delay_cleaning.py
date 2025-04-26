@@ -57,8 +57,13 @@ y = flights_cleaned['is_delayed']
 label_encoders = {}
 for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
     le = LabelEncoder()
-    X[col] = le.fit_transform(X[col])
+    unique_vals = flights_cleaned[col].unique().tolist()
+    if 'Other' not in unique_vals:
+        unique_vals.append('Other')
+    le.fit(unique_vals)
+    X[col] = le.transform(flights_cleaned[col])
     label_encoders[col] = le
+
 
 # Train/test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
