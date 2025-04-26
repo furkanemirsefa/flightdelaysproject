@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # full_airline_dashboard.py
 
 import streamlit as st
@@ -182,4 +181,3 @@ elif section == "Explain Prediction":
     st.pyplot(shap.force_plot(explainer.expected_value[1], shap_values[1], input_X, matplotlib=True))
 
     st.info('Reload page to see another random flight explanation!')
->>>>>>> 3ef35e77b229ae5a371f34ec0610e48899fe421b
