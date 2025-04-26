@@ -1,21 +1,8 @@
-<<<<<<< HEAD
-# requirements.txt for Flight Delay Dashboard
-
-streamlit
-pandas
-scikit-learn
-shap
-joblib
-plotly
-numpy
-=======
-# requirements.txt for Flight Delay Dashboard
-
-streamlit
-pandas
-scikit-learn
-shap
-joblib
-plotly
-numpy
->>>>>>> 3ef35e77b229ae5a371f34ec0610e48899fe421b
+streamlit>=1.27.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
+shap>=0.41.0
+joblib>=1.2.0
+plotly>=5.14.0
+numpy>=1.23.0
+matplotlib>=3.7.0
