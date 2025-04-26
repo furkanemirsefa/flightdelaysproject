@@ -76,3 +76,5 @@ print(confusion_matrix(y_test, y_pred))
 import joblib
 joblib.dump(model, 'flight_delay_model.pkl')
 joblib.dump(label_encoders, 'encoders.pkl')
+# Save the cleaned dataset for dashboard
+flights_cleaned.to_csv('your_cleaned_flight_data.csv', index=False)

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 Carrier Code,Airline Name
 WN,Southwest Airlines Co.
 DL,Delta Air Lines Inc.
@@ -11,18 +10,3 @@ G4,Allegiant Air
 F9,Frontier Airlines Inc.
 HA,Hawaiian Airlines Inc.
 SY,Sun Country Airlines
-=======
-Carrier Code,Airline Name
-WN,Southwest Airlines Co.
-DL,Delta Air Lines Inc.
-AA,American Airlines Inc.
-UA,United Air Lines Inc.
-B6,JetBlue Airways
-AS,Alaska Airlines Inc.
-NK,Spirit Air Lines
-G4,Allegiant Air
-F9,Frontier Airlines Inc.
-HA,Hawaiian Airlines Inc.
-SY,Sun Country Airlines
->>>>>>> 3ef35e77b229ae5a371f34ec0610e48899fe421b
-VX,Virgin America
