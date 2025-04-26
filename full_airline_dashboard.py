@@ -80,21 +80,28 @@ elif section == "Predict Flight Delay":
 elif section == "Explain Prediction":
     st.header('🔍 Explain the Flight Delay Prediction')
 
-    #shap.initjs()
-
+    # Sample 1 random flight
     input_sample = flights_cleaned.sample(1, random_state=42)
     input_X = input_sample[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
 
+    # Encode categoricals
     for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
         le = encoders[col]
         input_X[col] = le.transform(input_X[col])
 
+    # Create explainer
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(input_X)
 
     st.subheader('Random Sample Prediction Explanation')
     st.write('Sample Flight Details:', input_sample)
 
-    st_shap(shap.force_plot(explainer.expected_value, shap_values, input_X), height=300)
+    sample_idx = 0  # Pick first (or random) row
+
+    st_shap(shap.force_plot(
+    explainer.expected_value,
+    shap_values[sample_idx],
+    input_X.iloc[sample_idx]
+                ), height=300)
 
     st.info('Reload page to see another random flight explanation!')
