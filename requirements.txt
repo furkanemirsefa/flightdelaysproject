@@ -1,0 +1,9 @@
+# requirements.txt for Flight Delay Dashboard
+
+streamlit
+pandas
+scikit-learn
+shap
+joblib
+plotly
+numpy
