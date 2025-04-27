@@ -32,57 +32,63 @@ with overview_col2:
     fig2 = px.bar(top_origins, title="Top 10 Departure Airports")
     st.plotly_chart(fig2, use_container_width=True)
 
-# --- Small Form to Predict One Flight Delay ---
+# --- Small Quick Prediction Section ---
 st.subheader("🔮 Quick Flight Delay Prediction")
 
-with st.form("predict_form"):
-    cols = st.columns(3)
+col1, col2 = st.columns([1, 1])
 
-    with cols[0]:
-        month = st.selectbox("Month", sorted(flights_cleaned['month'].unique()), key="month")
-        day_of_week = st.selectbox("Day of Week", sorted(flights_cleaned['day_of_week'].unique()), key="dow")
-        part_of_day = st.selectbox("Part of Day", flights_cleaned['part_of_day'].unique(), key="part")
+with col1:
+    with st.form("quick_predict_form"):
+        row1 = st.columns(3)
+        with row1[0]:
+            carrier = st.selectbox("Carrier", flights_cleaned['carrier_simplified'].unique(), key="carrier2")
+        with row1[1]:
+            origin = st.selectbox("Origin Airport", flights_cleaned['origin_simplified'].unique(), key="origin2")
+        with row1[2]:
+            dest = st.selectbox("Destination Airport", flights_cleaned['dest_simplified'].unique(), key="dest2")
 
-    with cols[1]:
-        carrier = st.selectbox("Carrier", flights_cleaned['carrier_simplified'].unique(), key="carrier")
-        origin = st.selectbox("Origin Airport", flights_cleaned['origin_simplified'].unique(), key="origin")
-        dest = st.selectbox("Destination Airport", flights_cleaned['dest_simplified'].unique(), key="dest")
+        row2 = st.columns(3)
+        with row2[0]:
+            month = st.selectbox("Month", sorted(flights_cleaned['month'].unique()), key="month2")
+        with row2[1]:
+            day_of_week = st.selectbox("Day of Week", sorted(flights_cleaned['day_of_week'].unique()), key="dow2")
+        with row2[2]:
+            part_of_day = st.selectbox("Part of Day", flights_cleaned['part_of_day'].unique(), key="part2")
 
-    with cols[2]:
-        distance = st.number_input("Flight Distance (miles)", min_value=1, value=300, key="distance")
-        predict_button = st.form_submit_button("Predict")
+        predict_button = st.form_submit_button("Predict Flight Delay")
 
-if predict_button:
-    input_dict = {
-        'month': month,
-        'day_of_week': encoders['day_of_week'].transform([day_of_week])[0],
-        'part_of_day': encoders['part_of_day'].transform([part_of_day])[0],
-        'carrier_simplified': encoders['carrier_simplified'].transform([carrier])[0],
-        'origin_simplified': encoders['origin_simplified'].transform([origin])[0],
-        'dest_simplified': encoders['dest_simplified'].transform([dest])[0],
-        'distance': distance
-    }
+with col2:
+    if 'predict_button' in locals() and predict_button:
+        input_dict = {
+            'month': month,
+            'day_of_week': encoders['day_of_week'].transform([day_of_week])[0],
+            'part_of_day': encoders['part_of_day'].transform([part_of_day])[0],
+            'carrier_simplified': encoders['carrier_simplified'].transform([carrier])[0],
+            'origin_simplified': encoders['origin_simplified'].transform([origin])[0],
+            'dest_simplified': encoders['dest_simplified'].transform([dest])[0],
+            'distance': 500  # dummy distance
+        }
 
-    input_df = pd.DataFrame([input_dict])
-    prediction = model.predict(input_df)[0]
-    probability = model.predict_proba(input_df)[0][1] * 100  # 🎯 Confidence as %
+        input_df = pd.DataFrame([input_dict])
+        prediction = model.predict(input_df)[0]
+        probability = model.predict_proba(input_df)[0][1] * 100
 
-    result = {
-        "Flight Info": f"{carrier} {origin} ➔ {dest}",
-        "Prediction": "Delayed" if prediction == 1 else "On-Time",
-        "Confidence": f"{probability:.2f} %"
-    }
+        result = {
+            "Flight Info": f"{carrier} {origin} ➔ {dest}",
+            "Prediction": "Delayed" if prediction == 1 else "On-Time",
+            "Confidence": f"{probability:.2f} %"
+        }
 
-    result_df = pd.DataFrame([result])
-    st.dataframe(result_df)
+        result_df = pd.DataFrame([result])
+        st.success("✅ Prediction Completed")
+        st.dataframe(result_df)
 
 # ---------------------------------------------
 # 🔍 SECTION 2: Airline + Airport Performance Analytics
 # ---------------------------------------------
 st.header("🔍 Analyze Airline and Airport Delay Performance")
 
-# --- 2 Columns Layout ---
-col1, col2 = st.columns([1,2])
+col1, col2 = st.columns([1, 2])
 
 with col1:
     with st.form("group_form"):
