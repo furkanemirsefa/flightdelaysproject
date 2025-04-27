@@ -14,7 +14,7 @@ st.set_page_config(layout="wide")
 st.title("✈️ Flight Delay Prediction and Analytics Dashboard")
 
 # ---------------------------------------------
-# 📊 SECTION 1: Overview Analytics
+# 📊 SECTION 1: Overview Analytics + Quick Flight Prediction
 # ---------------------------------------------
 st.header("📊 Overview of Airlines and Airports")
 
@@ -32,21 +32,25 @@ with overview_col2:
     fig2 = px.bar(top_origins, title="Top 10 Departure Airports")
     st.plotly_chart(fig2, use_container_width=True)
 
-# ---------------------------------------------
-# 🔮 SECTION 2: Predict a Specific Flight Delay
-# ---------------------------------------------
-st.header("🔮 Predict Delay for a Specific Flight")
+# --- Small Form to Predict One Flight Delay ---
+st.subheader("🔮 Quick Flight Delay Prediction")
 
 with st.form("predict_form"):
-    month = st.selectbox("Month", sorted(flights_cleaned['month'].unique()))
-    day_of_week = st.selectbox("Day of Week", sorted(flights_cleaned['day_of_week'].unique()))
-    part_of_day = st.selectbox("Part of Day", flights_cleaned['part_of_day'].unique())
-    carrier = st.selectbox("Carrier", flights_cleaned['carrier_simplified'].unique())
-    origin = st.selectbox("Origin Airport", flights_cleaned['origin_simplified'].unique())
-    dest = st.selectbox("Destination Airport", flights_cleaned['dest_simplified'].unique())
-    distance = st.number_input("Flight Distance (miles)", min_value=1, value=300)
+    cols = st.columns(3)
 
-    predict_button = st.form_submit_button("Predict Delay")
+    with cols[0]:
+        month = st.selectbox("Month", sorted(flights_cleaned['month'].unique()), key="month")
+        day_of_week = st.selectbox("Day of Week", sorted(flights_cleaned['day_of_week'].unique()), key="dow")
+        part_of_day = st.selectbox("Part of Day", flights_cleaned['part_of_day'].unique(), key="part")
+
+    with cols[1]:
+        carrier = st.selectbox("Carrier", flights_cleaned['carrier_simplified'].unique(), key="carrier")
+        origin = st.selectbox("Origin Airport", flights_cleaned['origin_simplified'].unique(), key="origin")
+        dest = st.selectbox("Destination Airport", flights_cleaned['dest_simplified'].unique(), key="dest")
+
+    with cols[2]:
+        distance = st.number_input("Flight Distance (miles)", min_value=1, value=300, key="distance")
+        predict_button = st.form_submit_button("Predict")
 
 if predict_button:
     input_dict = {
@@ -61,15 +65,19 @@ if predict_button:
 
     input_df = pd.DataFrame([input_dict])
     prediction = model.predict(input_df)[0]
-    probability = model.predict_proba(input_df)[0][1]
+    probability = model.predict_proba(input_df)[0][1] * 100  # 🎯 Confidence as %
 
-    if prediction == 1:
-        st.error(f"🚨 Prediction: Flight will likely be Delayed! (Confidence: {probability:.2f})")
-    else:
-        st.success(f"✅ Prediction: Flight will likely be On-Time! (Confidence: {1-probability:.2f})")
+    result = {
+        "Flight Info": f"{carrier} {origin} ➔ {dest}",
+        "Prediction": "Delayed" if prediction == 1 else "On-Time",
+        "Confidence": f"{probability:.2f} %"
+    }
+
+    result_df = pd.DataFrame([result])
+    st.dataframe(result_df)
 
 # ---------------------------------------------
-# 🔍 SECTION 3: Airline + Airport Performance Analytics
+# 🔍 SECTION 2: Airline + Airport Performance Analytics
 # ---------------------------------------------
 st.header("🔍 Analyze Airline and Airport Delay Performance")
 
