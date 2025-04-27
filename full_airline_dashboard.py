@@ -78,92 +78,61 @@ elif section == "Predict Flight Delay":
         st.success(f'✅ Flight likely On-Time (Confidence: {1 - prediction_proba:.2f})')
 
 elif section == "Explain Prediction":
-    st.header('🔍 Explain the Flight Delay Prediction')
+    st.header('🔍 Analyze Flight Delay Performance')
 
-    # User selects airline
+    # --- Step 1: User selects options ---
     carrier_list = flights_cleaned['carrier'].unique()
     selected_carrier = st.selectbox("✈️ Select an Airline Carrier:", carrier_list)
 
-    # User chooses Departure or Arrival
     direction = st.radio("🛫🛬 Choose Flight Type:", ("Departing Flights", "Arriving Flights"))
 
-    # Filter flights based on user choices
+    # --- Step 2: Filter flights based on choices ---
     if direction == "Departing Flights":
         filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
-    else:
+    else:  # for now, arrival flights filter the same way; you could customize further if you want
         filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
 
+    # --- Step 3: Check if flights exist ---
     if filtered_flights.empty:
-        st.warning("⚠️ No flights found for this selection. Please try another airline or direction.")
+        st.warning("⚠️ No flights found for this selection. Please try another airline or flight type.")
     else:
-        input_sample = filtered_flights.sample(1, random_state=42)
-        input_X = input_sample[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
+        st.success(f"Found {len(filtered_flights)} flights for your selection!")
+
+        # --- Step 4: Prepare data ---
+        input_X = filtered_flights[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
 
         for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
             le = encoders[col]
             input_X[col] = le.transform(input_X[col])
 
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(input_X)
+        # --- Step 5: Predict delays ---
+        y_pred = model.predict(input_X)
+        filtered_flights['predicted_delay'] = y_pred
 
-        st.subheader('Selected Flight Details')
-        st.write(input_sample)
+        # --- Step 6: Calculate metrics ---
+        delay_rate = (filtered_flights['predicted_delay'].sum() / len(filtered_flights)) * 100
+        on_time_rate = 100 - delay_rate
+        avg_dep_delay = filtered_flights['dep_delay'].mean()
+        avg_arr_delay = filtered_flights['arr_delay'].mean()
 
-        sample_idx = 0
-        st_shap(shap.plots.force(explainer.expected_value[0],shap_values[sample_idx, :]),height=300)
-        st.markdown("""
-    ### ℹ️ How to Interpret This Force Plot
+        # --- Step 7: Display metrics ---
+        st.metric("Total Flights Analyzed", len(filtered_flights))
+        st.metric("Predicted % Delayed", f"{delay_rate:.2f}%")
+        st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
+        st.metric("Average Departure Delay (minutes)", f"{avg_dep_delay:.1f}")
+        st.metric("Average Arrival Delay (minutes)", f"{avg_arr_delay:.1f}")
 
-    - **Center point:** represents the model's base prediction (average across all flights).
-    - **Red arrows:** features that push the flight **toward being delayed**.
-    - **Blue arrows:** features that push the flight **toward being on-time**.
-    - **Arrow size:** bigger arrow means a stronger influence on the prediction.
+        # --- Step 8: Plot pie chart ---
+        import plotly.express as px
 
-    ---
-    ✅ If most of the large arrows are **red**, the model predicts the flight will likely be **delayed**.  
-    ✅ If most of the large arrows are **blue**, the model predicts the flight will likely be **on-time**.
-
-    ---
-    ### 📈 Quick Example:
-    - A **Late Night Departure** or **High Traffic Carrier** pushes toward **delay** (red).
-    - A **Morning Departure** or **Short Distance Flight** pushes toward **on-time** (blue).
-    ---
-    """)
-
-    # Create a Matplotlib figure for feature importance (downloadable version)
-
-        import matplotlib.pyplot as plt
-        
-        # Get feature names and SHAP values
-        feature_importances = pd.DataFrame({
-            'feature': input_X.columns,
-            'shap_value': shap_values[sample_idx, :]
-        }).sort_values('shap_value', key=abs, ascending=False)
-        
-        # Plot
-        fig, ax = plt.subplots(figsize=(8, 4))
-        feature_importances.plot.barh(
-            x='feature',
-            y='shap_value',
-            ax=ax,
-            color="skyblue",
-            legend=False
+        fig = px.pie(
+            names=["Delayed", "On-Time"],
+            values=[delay_rate, on_time_rate],
+            title=f"Predicted Delay Breakdown for {selected_carrier}"
         )
-        ax.set_title("Feature Contributions to Prediction")
-        ax.set_xlabel("SHAP Value")
-        plt.tight_layout()
-        
-        # Save to buffer
-        import io
-        buf = io.BytesIO()
-        plt.savefig(buf, format="png")
-        st.download_button(
-            label="📥 Download Explanation as PNG",
-            data=buf.getvalue(),
-            file_name="flight_delay_explanation.png",
-            mime="image/png"
-        )
+        st.plotly_chart(fig)
 
-    
-
-        st.info('Reload page to see another random flight explanation!')
+        # --- (Optional Bonus) Show small table of top delayed flights ---
+        st.subheader("🛫 Top 5 Most Delayed Flights in Selection")
+        top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
+        st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
