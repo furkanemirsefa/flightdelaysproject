@@ -87,18 +87,32 @@ elif section == "Explain Prediction":
 
         direction = st.radio("🛫🛬 Choose Flight Type:", ("Departing Flights", "Arriving Flights"))
 
+        # --- Dynamic Airport List ---
+        if direction == "Departing Flights":
+            airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['origin'].unique()
+        else:
+            airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['dest'].unique()
+
+        selected_airport = st.selectbox("🏢 Select Airport:", airport_list)
+
         submit_button = st.form_submit_button(label='Analyze Selection')
 
     if submit_button:
-        # --- Step 2: Filter flights based on choices ---
+        # --- Step 2: Filter flights ---
         if direction == "Departing Flights":
-            filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
-        else:  # Arrival Flights (you can later customize more if needed)
-            filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
+            filtered_flights = flights_cleaned[
+                (flights_cleaned['carrier'] == selected_carrier) &
+                (flights_cleaned['origin'] == selected_airport)
+            ]
+        else:  # Arriving Flights
+            filtered_flights = flights_cleaned[
+                (flights_cleaned['carrier'] == selected_carrier) &
+                (flights_cleaned['dest'] == selected_airport)
+            ]
 
         # --- Step 3: Check if flights exist ---
         if filtered_flights.empty:
-            st.warning("⚠️ No flights found for this selection. Please try another airline or flight type.")
+            st.warning("⚠️ No flights found for this selection. Please try another combination.")
         else:
             st.success(f"Found {len(filtered_flights)} flights for your selection!")
 
@@ -141,7 +155,7 @@ elif section == "Explain Prediction":
                 st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
                 st.metric("Average Arrival Delay", f"{avg_arr_delay:.1f} min")
 
-            # --- Step 8: Second Row ---
+            # --- Step 8: Second Row - Top Delays ---
             st.subheader("🛫 Top 5 Most Delayed Flights")
             top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
             st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
