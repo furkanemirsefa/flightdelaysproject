@@ -119,24 +119,24 @@ elif section == "Explain Prediction":
     """)
 
     import io
-import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
 # Generate the force plot as matplotlib figure
-fig = shap.plots.force(
-    explainer.expected_value[0],
-    shap_values[sample_idx, :],
-    matplotlib=True  # important!
-)
-
-# Save figure to BytesIO buffer
-buf = io.BytesIO()
-plt.savefig(buf, format="png")
-st.download_button(
-    label="📥 Download Explanation as PNG",
-    data=buf.getvalue(),
-    file_name="flight_delay_explanation.png",
-    mime="image/png"
-)
-
+    fig = shap.plots.force(
+        explainer.expected_value[0],
+        shap_values[sample_idx, :],
+        matplotlib=True  # important!
+    )
+    
+    # Save figure to BytesIO buffer
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    st.download_button(
+        label="📥 Download Explanation as PNG",
+        data=buf.getvalue(),
+        file_name="flight_delay_explanation.png",
+        mime="image/png"
+    )
+    
 
     st.info('Reload page to see another random flight explanation!')
