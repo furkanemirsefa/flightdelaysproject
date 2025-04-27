@@ -99,6 +99,23 @@ elif section == "Explain Prediction":
     sample_idx = 0
 
     st_shap(shap.plots.force(explainer.expected_value[0],shap_values[sample_idx, :]),height=300)
+    st.markdown("""
+    ### ℹ️ How to Interpret This Force Plot
 
+    - **Center point:** represents the model's base prediction (average across all flights).
+    - **Red arrows:** features that push the flight **toward being delayed**.
+    - **Blue arrows:** features that push the flight **toward being on-time**.
+    - **Arrow size:** bigger arrow means a stronger influence on the prediction.
+
+    ---
+    ✅ If most of the large arrows are **red**, the model predicts the flight will likely be **delayed**.  
+    ✅ If most of the large arrows are **blue**, the model predicts the flight will likely be **on-time**.
+
+    ---
+    ### 📈 Quick Example:
+    - A **Late Night Departure** or **High Traffic Carrier** pushes toward **delay** (red).
+    - A **Morning Departure** or **Short Distance Flight** pushes toward **on-time** (blue).
+    ---
+    """)
 
     st.info('Reload page to see another random flight explanation!')
