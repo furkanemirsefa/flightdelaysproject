@@ -80,26 +80,38 @@ elif section == "Predict Flight Delay":
 elif section == "Explain Prediction":
     st.header('🔍 Explain the Flight Delay Prediction')
 
-    # Sample 1 random flight
-    input_sample = flights_cleaned.sample(1, random_state=42)
-    input_X = input_sample[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
+    # User selects airline
+    carrier_list = flights_cleaned['carrier'].unique()
+    selected_carrier = st.selectbox("✈️ Select an Airline Carrier:", carrier_list)
 
-    # Encode categoricals
-    for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
-        le = encoders[col]
-        input_X[col] = le.transform(input_X[col])
+    # User chooses Departure or Arrival
+    direction = st.radio("🛫🛬 Choose Flight Type:", ("Departing Flights", "Arriving Flights"))
 
-    # Create explainer
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(input_X)
+    # Filter flights based on user choices
+    if direction == "Departing Flights":
+        filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
+    else:
+        filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
 
-    st.subheader('Random Sample Prediction Explanation')
-    st.write('Sample Flight Details:', input_sample)
+    if filtered_flights.empty:
+        st.warning("⚠️ No flights found for this selection. Please try another airline or direction.")
+    else:
+        input_sample = filtered_flights.sample(1, random_state=42)
+        input_X = input_sample[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
 
-    sample_idx = 0
+        for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
+            le = encoders[col]
+            input_X[col] = le.transform(input_X[col])
 
-    st_shap(shap.plots.force(explainer.expected_value[0],shap_values[sample_idx, :]),height=300)
-    st.markdown("""
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(input_X)
+
+        st.subheader('Selected Flight Details')
+        st.write(input_sample)
+
+        sample_idx = 0
+        st_shap(shap.plots.force(explainer.expected_value[0],shap_values[sample_idx, :]),height=300)
+        st.markdown("""
     ### ℹ️ How to Interpret This Force Plot
 
     - **Center point:** represents the model's base prediction (average across all flights).
@@ -120,38 +132,38 @@ elif section == "Explain Prediction":
 
     # Create a Matplotlib figure for feature importance (downloadable version)
 
-    import matplotlib.pyplot as plt
-    
-    # Get feature names and SHAP values
-    feature_importances = pd.DataFrame({
-        'feature': input_X.columns,
-        'shap_value': shap_values[sample_idx, :]
-    }).sort_values('shap_value', key=abs, ascending=False)
-    
-    # Plot
-    fig, ax = plt.subplots(figsize=(8, 4))
-    feature_importances.plot.barh(
-        x='feature',
-        y='shap_value',
-        ax=ax,
-        color="skyblue",
-        legend=False
-    )
-    ax.set_title("Feature Contributions to Prediction")
-    ax.set_xlabel("SHAP Value")
-    plt.tight_layout()
-    
-    # Save to buffer
-    import io
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png")
-    st.download_button(
-        label="📥 Download Explanation as PNG",
-        data=buf.getvalue(),
-        file_name="flight_delay_explanation.png",
-        mime="image/png"
-    )
+        import matplotlib.pyplot as plt
+        
+        # Get feature names and SHAP values
+        feature_importances = pd.DataFrame({
+            'feature': input_X.columns,
+            'shap_value': shap_values[sample_idx, :]
+        }).sort_values('shap_value', key=abs, ascending=False)
+        
+        # Plot
+        fig, ax = plt.subplots(figsize=(8, 4))
+        feature_importances.plot.barh(
+            x='feature',
+            y='shap_value',
+            ax=ax,
+            color="skyblue",
+            legend=False
+        )
+        ax.set_title("Feature Contributions to Prediction")
+        ax.set_xlabel("SHAP Value")
+        plt.tight_layout()
+        
+        # Save to buffer
+        import io
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png")
+        st.download_button(
+            label="📥 Download Explanation as PNG",
+            data=buf.getvalue(),
+            file_name="flight_delay_explanation.png",
+            mime="image/png"
+        )
 
     
 
-    st.info('Reload page to see another random flight explanation!')
+        st.info('Reload page to see another random flight explanation!')
