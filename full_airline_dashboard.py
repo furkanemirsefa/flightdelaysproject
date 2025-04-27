@@ -81,68 +81,73 @@ if predict_button:
 # ---------------------------------------------
 st.header("🔍 Analyze Airline and Airport Delay Performance")
 
-with st.form("group_form"):
-    carrier_list = flights_cleaned['carrier'].unique()
-    selected_carrier = st.selectbox("✈️ Select Airline", carrier_list)
+# --- 2 Columns Layout ---
+col1, col2 = st.columns([1,2])
 
-    direction = st.radio("🛫🛬 Departing or Arriving?", ("Departing Flights", "Arriving Flights"))
+with col1:
+    with st.form("group_form"):
+        carrier_list = flights_cleaned['carrier'].unique()
+        selected_carrier = st.selectbox("✈️ Select Airline", carrier_list)
 
-    if direction == "Departing Flights":
-        airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['origin'].unique()
-    else:
-        airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['dest'].unique()
+        direction = st.radio("🛫🛬 Departing or Arriving?", ("Departing Flights", "Arriving Flights"))
 
-    selected_airport = st.selectbox("🏢 Select Airport", airport_list)
-    analyze_button = st.form_submit_button("Analyze Selection")
+        if direction == "Departing Flights":
+            airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['origin'].unique()
+        else:
+            airport_list = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]['dest'].unique()
 
-if analyze_button:
-    if direction == "Departing Flights":
-        filtered_flights = flights_cleaned[
-            (flights_cleaned['carrier'] == selected_carrier) &
-            (flights_cleaned['origin'] == selected_airport)
-        ]
-    else:
-        filtered_flights = flights_cleaned[
-            (flights_cleaned['carrier'] == selected_carrier) &
-            (flights_cleaned['dest'] == selected_airport)
-        ]
+        selected_airport = st.selectbox("🏢 Select Airport", airport_list)
+        analyze_button = st.form_submit_button("Analyze Selection")
 
-    if filtered_flights.empty:
-        st.warning("⚠️ No flights found for your selection. Please try again.")
-    else:
-        st.success(f"Found {len(filtered_flights)} flights for your selection.")
+with col2:
+    if 'analyze_button' in locals() and analyze_button:
+        if direction == "Departing Flights":
+            filtered_flights = flights_cleaned[
+                (flights_cleaned['carrier'] == selected_carrier) &
+                (flights_cleaned['origin'] == selected_airport)
+            ]
+        else:
+            filtered_flights = flights_cleaned[
+                (flights_cleaned['carrier'] == selected_carrier) &
+                (flights_cleaned['dest'] == selected_airport)
+            ]
 
-        input_X = filtered_flights[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
-        for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
-            le = encoders[col]
-            input_X[col] = le.transform(input_X[col])
+        if filtered_flights.empty:
+            st.warning("⚠️ No flights found for your selection. Please try again.")
+        else:
+            st.success(f"Found {len(filtered_flights)} flights for your selection.")
 
-        y_pred = model.predict(input_X)
-        filtered_flights['predicted_delay'] = y_pred
+            input_X = filtered_flights[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
+            for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
+                le = encoders[col]
+                input_X[col] = le.transform(input_X[col])
 
-        delay_rate = (filtered_flights['predicted_delay'].sum() / len(filtered_flights)) * 100
-        on_time_rate = 100 - delay_rate
-        avg_dep_delay = filtered_flights['dep_delay'].mean()
-        avg_arr_delay = filtered_flights['arr_delay'].mean()
+            y_pred = model.predict(input_X)
+            filtered_flights['predicted_delay'] = y_pred
 
-        col1, col2, col3 = st.columns(3)
+            delay_rate = (filtered_flights['predicted_delay'].sum() / len(filtered_flights)) * 100
+            on_time_rate = 100 - delay_rate
+            avg_dep_delay = filtered_flights['dep_delay'].mean()
+            avg_arr_delay = filtered_flights['arr_delay'].mean()
 
-        with col1:
-            st.metric("Predicted % Delayed", f"{delay_rate:.2f}%")
-            st.metric("Average Departure Delay", f"{avg_dep_delay:.1f} min")
+            col11, col22, col33 = st.columns(3)
 
-        with col2:
-            fig = px.pie(
-                names=["Delayed", "On-Time"],
-                values=[delay_rate, on_time_rate],
-                title="Delay Breakdown"
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            with col11:
+                st.metric("Predicted % Delayed", f"{delay_rate:.2f}%")
+                st.metric("Avg Departure Delay", f"{avg_dep_delay:.1f} min")
 
-        with col3:
-            st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
-            st.metric("Average Arrival Delay", f"{avg_arr_delay:.1f} min")
+            with col22:
+                fig = px.pie(
+                    names=["Delayed", "On-Time"],
+                    values=[delay_rate, on_time_rate],
+                    title="Delay Breakdown"
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("🛫 Top 5 Most Delayed Flights")
-        top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
-        st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
+            with col33:
+                st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
+                st.metric("Avg Arrival Delay", f"{avg_arr_delay:.1f} min")
+
+            st.subheader("🛫 Top 5 Most Delayed Flights")
+            top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
+            st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
