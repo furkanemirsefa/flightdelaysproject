@@ -81,58 +81,67 @@ elif section == "Explain Prediction":
     st.header('🔍 Analyze Flight Delay Performance')
 
     # --- Step 1: User selects options ---
-    carrier_list = flights_cleaned['carrier'].unique()
-    selected_carrier = st.selectbox("✈️ Select an Airline Carrier:", carrier_list)
+    with st.form(key='selection_form'):
+        carrier_list = flights_cleaned['carrier'].unique()
+        selected_carrier = st.selectbox("✈️ Select an Airline Carrier:", carrier_list)
 
-    direction = st.radio("🛫🛬 Choose Flight Type:", ("Departing Flights", "Arriving Flights"))
+        direction = st.radio("🛫🛬 Choose Flight Type:", ("Departing Flights", "Arriving Flights"))
 
-    # --- Step 2: Filter flights based on choices ---
-    if direction == "Departing Flights":
-        filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
-    else:  # for now, arrival flights filter the same way; you could customize further if you want
-        filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
+        submit_button = st.form_submit_button(label='Analyze Selection')
 
-    # --- Step 3: Check if flights exist ---
-    if filtered_flights.empty:
-        st.warning("⚠️ No flights found for this selection. Please try another airline or flight type.")
-    else:
-        st.success(f"Found {len(filtered_flights)} flights for your selection!")
+    if submit_button:
+        # --- Step 2: Filter flights based on choices ---
+        if direction == "Departing Flights":
+            filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
+        else:  # Arrival Flights (you can later customize more if needed)
+            filtered_flights = flights_cleaned[flights_cleaned['carrier'] == selected_carrier]
 
-        # --- Step 4: Prepare data ---
-        input_X = filtered_flights[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
+        # --- Step 3: Check if flights exist ---
+        if filtered_flights.empty:
+            st.warning("⚠️ No flights found for this selection. Please try another airline or flight type.")
+        else:
+            st.success(f"Found {len(filtered_flights)} flights for your selection!")
 
-        for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
-            le = encoders[col]
-            input_X[col] = le.transform(input_X[col])
+            # --- Step 4: Prepare data ---
+            input_X = filtered_flights[['month', 'day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified', 'distance']]
 
-        # --- Step 5: Predict delays ---
-        y_pred = model.predict(input_X)
-        filtered_flights['predicted_delay'] = y_pred
+            for col in ['day_of_week', 'part_of_day', 'carrier_simplified', 'origin_simplified', 'dest_simplified']:
+                le = encoders[col]
+                input_X[col] = le.transform(input_X[col])
 
-        # --- Step 6: Calculate metrics ---
-        delay_rate = (filtered_flights['predicted_delay'].sum() / len(filtered_flights)) * 100
-        on_time_rate = 100 - delay_rate
-        avg_dep_delay = filtered_flights['dep_delay'].mean()
-        avg_arr_delay = filtered_flights['arr_delay'].mean()
+            # --- Step 5: Predict delays ---
+            y_pred = model.predict(input_X)
+            filtered_flights['predicted_delay'] = y_pred
 
-        # --- Step 7: Display metrics ---
-        st.metric("Total Flights Analyzed", len(filtered_flights))
-        st.metric("Predicted % Delayed", f"{delay_rate:.2f}%")
-        st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
-        st.metric("Average Departure Delay (minutes)", f"{avg_dep_delay:.1f}")
-        st.metric("Average Arrival Delay (minutes)", f"{avg_arr_delay:.1f}")
+            # --- Step 6: Calculate metrics ---
+            delay_rate = (filtered_flights['predicted_delay'].sum() / len(filtered_flights)) * 100
+            on_time_rate = 100 - delay_rate
+            avg_dep_delay = filtered_flights['dep_delay'].mean()
+            avg_arr_delay = filtered_flights['arr_delay'].mean()
 
-        # --- Step 8: Plot pie chart ---
-        import plotly.express as px
+            # --- Step 7: Create 2 Rows - 3 Columns Layout ---
+            col1, col2, col3 = st.columns(3)
 
-        fig = px.pie(
-            names=["Delayed", "On-Time"],
-            values=[delay_rate, on_time_rate],
-            title=f"Predicted Delay Breakdown for {selected_carrier}"
-        )
-        st.plotly_chart(fig)
+            with col1:
+                st.metric("Predicted % Delayed", f"{delay_rate:.2f}%")
+                st.metric("Average Departure Delay", f"{avg_dep_delay:.1f} min")
 
-        # --- (Optional Bonus) Show small table of top delayed flights ---
-        st.subheader("🛫 Top 5 Most Delayed Flights in Selection")
-        top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
-        st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
+            with col2:
+                # --- Pie chart in the middle ---
+                import plotly.express as px
+
+                fig = px.pie(
+                    names=["Delayed", "On-Time"],
+                    values=[delay_rate, on_time_rate],
+                    title="Delay Breakdown"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            with col3:
+                st.metric("Predicted % On-Time", f"{on_time_rate:.2f}%")
+                st.metric("Average Arrival Delay", f"{avg_arr_delay:.1f} min")
+
+            # --- Step 8: Second Row ---
+            st.subheader("🛫 Top 5 Most Delayed Flights")
+            top_delays = filtered_flights.sort_values('dep_delay', ascending=False).head(5)
+            st.dataframe(top_delays[['flight', 'origin', 'dest', 'dep_delay', 'arr_delay']])
