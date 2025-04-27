@@ -118,17 +118,31 @@ elif section == "Explain Prediction":
     ---
     """)
 
-    import io
-    import matplotlib.pyplot as plt
+    # Create a Matplotlib figure for feature importance (downloadable version)
 
-# Generate the force plot as matplotlib figure
-    fig = shap.plots.force(
-        explainer.expected_value[0],
-        shap_values[sample_idx, :],
-        matplotlib=True  # important!
-    )
+    import matplotlib.pyplot as plt
     
-    # Save figure to BytesIO buffer
+    # Get feature names and SHAP values
+    feature_importances = pd.DataFrame({
+        'feature': input_X.columns,
+        'shap_value': shap_values[sample_idx, :]
+    }).sort_values('shap_value', key=abs, ascending=False)
+    
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 4))
+    feature_importances.plot.barh(
+        x='feature',
+        y='shap_value',
+        ax=ax,
+        color="skyblue",
+        legend=False
+    )
+    ax.set_title("Feature Contributions to Prediction")
+    ax.set_xlabel("SHAP Value")
+    plt.tight_layout()
+    
+    # Save to buffer
+    import io
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
     st.download_button(
@@ -137,6 +151,7 @@ elif section == "Explain Prediction":
         file_name="flight_delay_explanation.png",
         mime="image/png"
     )
+
     
 
     st.info('Reload page to see another random flight explanation!')
